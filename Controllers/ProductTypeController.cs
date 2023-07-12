@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using System;
 using System.Collections.Generic;
 using TaskList.DTO;
 using TaskList.IRepository;
@@ -68,9 +69,16 @@ namespace TaskList.Controllers
         }
         [HttpGet]
         [Route("GettingPurchaseDetailsDaily")]
-        public  IActionResult DailDailyPurchase(DailyDto dto) {
+        public  IActionResult DailDailyPurchase(DateTime     dto) {
           var sb=  _service.DailyPurchase(dto);
             return Ok(sb) ;}
+        [HttpGet]
+        [Route("GettingPurchaseDetailsMonthly")]
+        public IActionResult Monthlyurchase(DateTime dto)
+        {
+            var sb = _service.MonthlyPurchase(dto);
+            return Ok(sb);
+        }
 
 
 

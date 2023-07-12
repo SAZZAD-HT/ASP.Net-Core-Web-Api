@@ -120,10 +120,11 @@ namespace TaskList.Services
                 PurchaseDate = dto.PurchaseDate,
                 IsActive = dto.IsActive
             };
+            int generatedSalesId = Purchase.PurchaseId;
             var PurchaseDetails = new TblPurchaseDetails
             {
                
-                PurchaseId = dto.pid,
+                PurchaseId = generatedSalesId,
                 ItemId = dto.ItemId,
                 ItemQuantity = dto.ItemQuantity,
                 IsActive = dto.IsActive
@@ -150,7 +151,16 @@ namespace TaskList.Services
 
             _context.SaveChanges();
             int generatedSalesId = sell.SalesId;
-            
+         
+            var item=_context.TblItem.FirstOrDefault(item => item.ItemId == dto.ItemId);
+
+            if (item.StockQuantity == 0)
+            {
+                return Task.FromResult("No stock available"); 
+            }
+
+
+
 
 
             var selld = new TblSalesDetails
@@ -173,10 +183,11 @@ namespace TaskList.Services
 
 
         }
-        public async Task<DailyShowDto>  DailyPurchase(DailyDto dto)
+
+        public async Task<DailyShowDto>  DailyPurchase(DateTime dto)
         {
          
-            var targetDate = dto.PurchaseDate;
+            var targetDate =dto;
 
             var result = await ( from item in _context.TblItem
                          join purchaseDetails in _context.TblPurchaseDetails
@@ -194,8 +205,27 @@ namespace TaskList.Services
 
             return result;
         }
+        public async Task<DailyShowDto> MonthlyPurchase(DateTime dto)
+        {
 
-        
+            var targetDate = dto;
+            int targetMonth = targetDate.Month;
+
+            var result =await (from item in _context.TblItem
+                                       join purchaseDetails in _context.TblPurchaseDetails on item.ItemId equals purchaseDetails.ItemId
+                                       join purchase in _context.TblPurchase on purchaseDetails.PurchaseId equals purchase.PurchaseId
+                                       where purchase.PurchaseDate.Value.Month == targetMonth
+                                       select new DailyShowDto
+                                       {
+                                           ItemId = item.ItemId,
+                                           ItemName = item.ItemName,
+                                           ItemQuantity = purchaseDetails.ItemQuantity
+                                       }).FirstOrDefaultAsync();
+
+            return result;
+        }
+
+
     }
     }
 
