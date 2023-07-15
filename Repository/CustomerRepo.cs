@@ -22,6 +22,7 @@ namespace TaskList.Services
       
        public Task<string> AddPartnerType(PartnertypeDto dto)
         {
+            try { 
             var entity = new TblPartnerType
             {
             
@@ -34,6 +35,12 @@ namespace TaskList.Services
            
 
             return Task.FromResult("Success");
+            }
+            catch(Exception ex)
+            {
+                throw new Exception("Not Vlid");
+               
+            }
         }
 
         public Task<string> AddPartner(PartnerDto dto)
@@ -138,91 +145,197 @@ namespace TaskList.Services
         }
         public Task<string> SellItem(Salesdto dto)
         {
-
-            var sell = new TblSales
+            try
             {
-             
-                CustomerId = dto.CustomerId,
-                SalesDate = dto.SalesDate,
-                IsActive = dto.IsActive
-            };
+                var item = _context.TblItem.FirstOrDefault(item => item.ItemId == dto.ItemId);
 
-            _context.TblSales.Add(sell);
+                if (item.StockQuantity == 0 & (item.StockQuantity - dto.ItemQuantity) <= 0)
+                {
+                    throw new Exception("Item is null");
+                }
 
-            _context.SaveChanges();
-            int generatedSalesId = sell.SalesId;
-         
-            var item=_context.TblItem.FirstOrDefault(item => item.ItemId == dto.ItemId);
+                var sell = new TblSales
+                {
 
-            if (item.StockQuantity == 0)
+                    CustomerId = dto.CustomerId,
+                    SalesDate = dto.SalesDate,
+                    IsActive = dto.IsActive
+                };
+
+                _context.TblSales.Add(sell);
+
+                _context.SaveChanges();
+                int generatedSalesId = sell.SalesId;
+
+
+
+
+
+
+                var selld = new TblSalesDetails
+                {
+
+
+                    SalesId = generatedSalesId,
+                    ItemId = dto.ItemId,
+                    ItemQuantity = dto.ItemQuantity,
+                    UnitPrice = dto.UnitPrice,
+                    IsActive = dto.IsActive,
+
+                };
+
+                _context.TblSalesDetails.Add(selld);
+                _context.SaveChanges();
+
+                return Task.FromResult("Success");
+            }
+            catch (Exception ex)
             {
-                return Task.FromResult("No stock available"); 
+                throw new Exception("data Is not valid ");   
             }
 
 
 
-
-
-            var selld = new TblSalesDetails
-            {
-
-    
-                SalesId= generatedSalesId,
-                ItemId=dto.ItemId,
-                ItemQuantity=dto.ItemQuantity,
-                UnitPrice=dto.UnitPrice,
-                IsActive=dto.IsActive,
-             
-             };
-
-            _context.TblSalesDetails.Add(selld);
-            _context.SaveChanges();
-
-            return Task.FromResult("Success");
-
-
-
         }
 
-        public async Task<DailyShowDto>  DailyPurchase(DateTime dto)
+        public async Task<List<DailyShowDto>>  DailyPurchase(DateTime dto)
         {
          
             var targetDate =dto;
 
-            var result = await ( from item in _context.TblItem
-                         join purchaseDetails in _context.TblPurchaseDetails
-                             on item.ItemId equals purchaseDetails.ItemId
-                         join purchase in _context.TblPurchase
-                             on purchaseDetails.PurchaseId equals purchase.PurchaseId
-                         where purchase.PurchaseDate == targetDate
-                         select new DailyShowDto
-                         {
-                             ItemId = item.ItemId,
-                             ItemName = item.ItemName,
-                             ItemQuantity = purchaseDetails.ItemQuantity,
+            var result = await (from item in _context.TblItem
+                                join purchaseDetails in _context.TblPurchaseDetails
+                                    on item.ItemId equals purchaseDetails.ItemId
+                                join purchase in _context.TblPurchase
+                                    on purchaseDetails.PurchaseId equals purchase.PurchaseId
+                                where purchase.PurchaseDate == targetDate
+                                select new DailyShowDto
+                                {
+                                    ItemId = item.ItemId,
+                                    ItemName = item.ItemName,
+                                    ItemQuantity = purchaseDetails.ItemQuantity,
 
-                         }).FirstOrDefaultAsync();
+                                }).ToListAsync();
 
             return result;
         }
-        public async Task<DailyShowDto> MonthlyPurchase(DateTime dto)
+        public async Task<List<DailyShowDto>> MonthlyPurchase(DateTime dto)
         {
 
             var targetDate = dto;
             int targetMonth = targetDate.Month;
 
             var result =await (from item in _context.TblItem
-                                       join purchaseDetails in _context.TblPurchaseDetails on item.ItemId equals purchaseDetails.ItemId
-                                       join purchase in _context.TblPurchase on purchaseDetails.PurchaseId equals purchase.PurchaseId
-                                       where purchase.PurchaseDate.Value.Month == targetMonth
+                                       join sellsDetails in _context.TblSalesDetails on item.ItemId equals sellsDetails.ItemId
+                                       join sales in _context.TblSales on sellsDetails.SalesId equals sales.SalesId
+                                       where sales.SalesDate.Value.Month == targetMonth
                                        select new DailyShowDto
                                        {
                                            ItemId = item.ItemId,
                                            ItemName = item.ItemName,
-                                           ItemQuantity = purchaseDetails.ItemQuantity
-                                       }).FirstOrDefaultAsync();
+                                           ItemQuantity = sellsDetails.ItemQuantity
+                                       }).ToListAsync();
 
             return result;
+        }
+
+
+
+
+
+
+        public async  Task<List<ReportDto>> Report(DateTime dto)
+        {
+            var targetDate = dto.Date;
+           
+
+            var result = await(from item in _context.TblItem
+                               join purchaseDetails in _context.TblPurchaseDetails
+                                   on item.ItemId equals purchaseDetails.ItemId
+                               join purchase in _context.TblPurchase
+                                   on purchaseDetails.PurchaseId equals purchase.PurchaseId
+                               where purchase.PurchaseDate == targetDate
+                               select new ReportDto
+                               {
+                                   ItemId = item.ItemId,
+                                   ItemName = item.ItemName,
+                                   PurchaseQuantity = purchaseDetails.ItemQuantity,
+                                   PUnitPrice = purchaseDetails.UnitPrice,
+
+                               }).ToListAsync();
+            var result2 = await (from item in _context.TblItem
+                                join sellsDetails in _context.TblSalesDetails on item.ItemId equals sellsDetails.ItemId
+                                join sales in _context.TblSales on sellsDetails.SalesId equals sales.SalesId
+                                where sales.SalesDate == targetDate
+                                 select new ReportDto
+                                {
+                                    ItemId = item.ItemId,
+                                    ItemName = item.ItemName,
+                                    SurchaseQuantity  = sellsDetails.ItemQuantity,
+                                    SUnitPrice=sellsDetails.UnitPrice,
+
+                                }).ToListAsync();
+            var combinedResult = result.Concat(result2).ToList();
+            return combinedResult;
+
+
+
+        }
+
+
+        public async Task<List<ReportTable>> Revenue(DateTime dto)
+        {
+            var targetDate = dto;
+            var month = dto.Month;
+            var result = await (from item in _context.TblItem
+                                join purchaseDetails in _context.TblPurchaseDetails
+                                    on item.ItemId equals purchaseDetails.ItemId
+                                join purchase in _context.TblPurchase
+                                    on purchaseDetails.PurchaseId equals purchase.PurchaseId
+                                where purchase.PurchaseDate == targetDate
+                                group purchaseDetails by new {item.ItemId,item.ItemName } into g
+                                select new ReportTable
+                                {
+                                    ItemId = g.Key.ItemId,
+                                    ItemName = g.Key.ItemName,
+                                    unitprice = g.Sum(pd => pd.UnitPrice),
+                                    TotalPurchaseAmount = (int)g.Sum(pd => pd.UnitPrice),
+
+
+                                }).ToListAsync();
+            var result2 = await (from item in _context.TblItem
+                                 join sellsDetails in _context.TblSalesDetails on item.ItemId equals sellsDetails.ItemId
+                                 join sales in _context.TblSales on sellsDetails.SalesId equals sales.SalesId
+                                 where sales.SalesDate == targetDate
+                                 group sellsDetails by new { item.ItemId, item.ItemName } into g
+                                 select new ReportTable
+                                 {
+                                     MonthName = month.ToString(),
+                                     ItemId = g.Key.ItemId,
+                                     ItemName = g.Key.ItemName,
+                                     snitprice = g.Sum(pd => pd.UnitPrice),
+                                     SalesAmount = (int)g.Sum(pd => pd.UnitPrice),
+
+                                 }).ToListAsync();
+            result2.ForEach(x =>
+            {
+                if ((x.snitprice - x.unitprice) == 1) {
+                    x.plStatus = "Profit";
+                }
+                else
+                {
+                    x.plStatus = "Loss";
+
+                }
+               
+            });
+            var combinedResult = result.Concat(result2).ToList();
+            return combinedResult;  
+
+
+
+
+
         }
 
 

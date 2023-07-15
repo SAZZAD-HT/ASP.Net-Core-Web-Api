@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using TaskList.DTO;
 using TaskList.IRepository;
 using TaskList.Services;
@@ -67,19 +68,36 @@ namespace TaskList.Controllers
             _service.SellItem(sales);
             return Ok();
         }
+
+
+
         [HttpGet]
         [Route("GettingPurchaseDetailsDaily")]
-        public  IActionResult DailDailyPurchase(DateTime     dto) {
-          var sb=  _service.DailyPurchase(dto);
-            return Ok(sb) ;}
-        [HttpGet]
-        [Route("GettingPurchaseDetailsMonthly")]
-        public IActionResult Monthlyurchase(DateTime dto)
-        {
-            var sb = _service.MonthlyPurchase(dto);
+        public async  Task<IActionResult> DailyPurchase(DateTime     dto) {
+          var sb = await _service.DailyPurchase(dto);
             return Ok(sb);
         }
-
+        [HttpGet]
+        [Route("GettingPurchaseDetailsMonthly")]
+        public async Task<IActionResult> MonthlyPurchase(DateTime dto)
+        {
+            var sb =await  _service.MonthlyPurchase(dto);
+            return Ok(sb);
+        }
+        [HttpGet]
+        [Route("Repotsvs")]
+        public async Task<IActionResult> Report(DateTime dto)
+        {
+            var sb =await _service.Report(dto);
+            return Ok(sb);
+        }
+        [HttpGet]
+        [Route("Reporttable")]
+        public async Task<IActionResult> ReportTT(DateTime dto)
+        {
+            var sb = await _service.Revenue(dto);
+            return Ok(sb);
+        }
 
 
     }

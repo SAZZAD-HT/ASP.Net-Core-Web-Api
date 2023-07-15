@@ -16,7 +16,9 @@ namespace TaskList.IRepository
         public Task<string> SellItem(Salesdto dto);
       
 
-        public Task<DailyShowDto> DailyPurchase(DateTime dto);
-        public Task<DailyShowDto> MonthlyPurchase(DateTime dto);
+        public Task<List<DailyShowDto>> DailyPurchase(DateTime dto);
+        public Task<List<DailyShowDto>> MonthlyPurchase(DateTime dto);
+        public Task<List<ReportDto>> Report(DateTime dto);
+      public Task<List<ReportTable>> Revenue(DateTime dto);
     }
 }
