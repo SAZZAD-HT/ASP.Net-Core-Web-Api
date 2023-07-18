@@ -1,6 +1,7 @@
 ﻿using ispat.DTO.Authentication;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Threading.Tasks;
 using TaskList.DTO;
 
@@ -20,5 +21,6 @@ namespace TaskList.IRepository
         public Task<List<DailyShowDto>> MonthlyPurchase(DateTime dto);
         public Task<List<ReportDto>> Report(DateTime dto);
       public Task<List<ReportTable>> Revenue(DateTime dto);
+       public Task<DataTable> SP(DateTime dto);
     }
 }

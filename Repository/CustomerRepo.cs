@@ -7,6 +7,9 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.EntityFrameworkCore;
 using System;
+using Microsoft.Data.SqlClient;
+using System.Data;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 
 namespace TaskList.Services
 {
@@ -241,16 +244,10 @@ namespace TaskList.Services
             return result;
         }
 
-
-
-
-
-
         public async  Task<List<ReportDto>> Report(DateTime dto)
         {
             var targetDate = dto.Date;
-           
-
+          
             var result = await(from item in _context.TblItem
                                join purchaseDetails in _context.TblPurchaseDetails
                                    on item.ItemId equals purchaseDetails.ItemId
@@ -277,14 +274,9 @@ namespace TaskList.Services
                                     SUnitPrice=sellsDetails.UnitPrice,
 
                                 }).ToListAsync();
-            var combinedResult = result.Concat(result2).ToList();
+            var combinedResult = result.Union(result2).ToList();
             return combinedResult;
-
-
-
         }
-
-
         public async Task<List<ReportTable>> Revenue(DateTime dto)
         {
            
@@ -304,10 +296,7 @@ namespace TaskList.Services
                                          Year = year.ToString(),
                                          MonthName = month.ToString(),
                                          ItemId = g.Key.ItemId,
-                                    ItemName = g.Key.ItemName,
-                                    //unitprice = purchaseDetails.UnitPrice,
-                                    //pQuantity=purchaseDetails.ItemQuantity,
-                                         //PurchaseTotal = (int)(purchaseDetails.UnitPrice * purchaseDetails.ItemQuantity),
+                                         ItemName = g.Key.ItemName,
                                          PurchaseTotal =  g.Sum(a=> a.ItemQuantity*a.UnitPrice),
 
                                      });
@@ -326,23 +315,6 @@ namespace TaskList.Services
 
 
                                 });
-
-            //var combinedResult = resPurchase.Concat(selled).ToList();
-            //var data = (from p in resPurchase
-            //            join s in selled on p.ItemId equals s.ItemId into gj
-            //            from s in gj.DefaultIfEmpty()
-            //            select new ReportTable
-            //            {
-            //                ItemId = p.ItemId,
-            //                ItemName = p.ItemName,
-            //                plStatus = (p != null && s != null) ? ((p.PurchaseTotal - s.SellTotal) >= 0 ? "Profit" : "Loss") : (p != null ? "No Purchase" : (s != null ? "No sell" : "No transaction Occur")),
-
-            //                Year = year.ToString(),
-            //                MonthName = month.ToString(),
-            //                PurchaseTotal = p.PurchaseTotal,
-            //                SellTotal = s != null ? s.SellTotal : 0
-            //}).ToList();
-
             var data1 = await (from i in _context.TblItem
                                join s in selled on i.ItemId equals s.ItemId into sr
                                from s in sr.DefaultIfEmpty()
@@ -363,8 +335,51 @@ namespace TaskList.Services
                                 return data1;  
 
         }
+        public async Task<DataTable> SP(DateTime dto)
+        {
+            try
+            {
+                DataTable dt = new DataTable();
+                string connectionString = @"Server=DESKTOP-RF6ORRA\SQLEXPRESS;Initial Catalog=Ecommerce;Persist Security Info=False;MultipleActiveResultSets=False;Encrypt=False;TrustServerCertificate=True;Integrated Security=True;Connection Timeout=30";
+                using (SqlConnection sqlConnection = new SqlConnection(connectionString))
+                {
+                    if (sqlConnection == null)
+                    {
+                        throw new Exception("Connection has not established");
+                    }
+
+                    string storedProcedureName = "dbo.SP";
+                    using (SqlCommand sqlCmd = new SqlCommand(storedProcedureName, sqlConnection))
+                    {
+                        sqlCmd.CommandType = CommandType.StoredProcedure;
+                        sqlCmd.Parameters.AddWithValue("@Month", dto.Month);
+                        sqlCmd.Parameters.AddWithValue("@Year", dto.Year);
+
+                        await sqlConnection.OpenAsync();
+
+                        if (dt == null)
+                        {
+                            throw new Exception("Problem with inserting data");
+                        }
+                        using (SqlDataAdapter sqlAdapter = new SqlDataAdapter(sqlCmd))
+                        {
+                            sqlAdapter.Fill(dt);
+                        }
+                        sqlConnection.Close();
+                    }
+                }
+
+                return dt;
+            }
+            catch (Exception ex)
+            {
+                // Handle exception properly
+                return new DataTable();
+            }
 
 
-    }
-    }
 
+        }
+}
+
+}

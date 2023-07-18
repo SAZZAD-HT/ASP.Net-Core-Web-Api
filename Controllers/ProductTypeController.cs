@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using TaskList.DTO;
 using TaskList.IRepository;
@@ -98,6 +100,15 @@ namespace TaskList.Controllers
         {
             var sb = await _service.Revenue(dto);
             return Ok(sb);
+        }
+        [HttpGet]
+        [Route("SpCheack")]
+     
+        public async Task<IActionResult> sp(DateTime dto)
+        {
+            //var sb =await _service.SP(dto);
+            string jsonString = JsonConvert.SerializeObject(await _service.SP(dto));
+            return Ok(jsonString);
         }
 
 
