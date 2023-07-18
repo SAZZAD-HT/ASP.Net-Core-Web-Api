@@ -127,17 +127,19 @@ namespace TaskList.Services
                 PurchaseDate = dto.PurchaseDate,
                 IsActive = dto.IsActive
             };
+            _context.TblPurchase.Add(Purchase);
+            _context.SaveChanges();
             int generatedSalesId = Purchase.PurchaseId;
             var PurchaseDetails = new TblPurchaseDetails
             {
-               
+
                 PurchaseId = generatedSalesId,
                 ItemId = dto.ItemId,
                 ItemQuantity = dto.ItemQuantity,
+                UnitPrice=dto.UnitPrice,
                 IsActive = dto.IsActive
             };
-            _context.TblPurchase.Add(Purchase);
-            _context.SaveChanges();
+          
             _context.TblPurchaseDetails.Add(PurchaseDetails);
             _context.SaveChanges();
 
@@ -285,56 +287,80 @@ namespace TaskList.Services
 
         public async Task<List<ReportTable>> Revenue(DateTime dto)
         {
+           
             var targetDate = dto;
             var month = dto.Month;
-            var result = await (from item in _context.TblItem
+            var year= dto.Year;
+            var resPurchase =  (from item in _context.TblItem
                                 join purchaseDetails in _context.TblPurchaseDetails
                                     on item.ItemId equals purchaseDetails.ItemId
                                 join purchase in _context.TblPurchase
                                     on purchaseDetails.PurchaseId equals purchase.PurchaseId
-                                where purchase.PurchaseDate == targetDate
-                                group purchaseDetails by new {item.ItemId,item.ItemName } into g
-                                select new ReportTable
+                                where purchase.PurchaseDate.Value.Month == month && item.IsActive == "Active" && purchaseDetails.IsActive=="Active" && purchase.IsActive== "Active" && purchase.PurchaseDate.Value.Year == year
+                                     group purchaseDetails by new { item.ItemId, item.ItemName } into g
+
+                                     select new ReportTable
                                 {
-                                    ItemId = g.Key.ItemId,
+                                         Year = year.ToString(),
+                                         MonthName = month.ToString(),
+                                         ItemId = g.Key.ItemId,
                                     ItemName = g.Key.ItemName,
-                                    unitprice = g.Sum(pd => pd.UnitPrice),
-                                    TotalPurchaseAmount = (int)g.Sum(pd => pd.UnitPrice),
+                                    //unitprice = purchaseDetails.UnitPrice,
+                                    //pQuantity=purchaseDetails.ItemQuantity,
+                                         //PurchaseTotal = (int)(purchaseDetails.UnitPrice * purchaseDetails.ItemQuantity),
+                                         PurchaseTotal =  g.Sum(a=> a.ItemQuantity*a.UnitPrice),
 
-
-                                }).ToListAsync();
-            var result2 = await (from item in _context.TblItem
+                                     });
+            var selled =  (from item in _context.TblItem
                                  join sellsDetails in _context.TblSalesDetails on item.ItemId equals sellsDetails.ItemId
                                  join sales in _context.TblSales on sellsDetails.SalesId equals sales.SalesId
-                                 where sales.SalesDate == targetDate
-                                 group sellsDetails by new { item.ItemId, item.ItemName } into g
-                                 select new ReportTable
+                                 where sales.SalesDate.Value.Month == month && item.IsActive == "Active" && sellsDetails.IsActive == "Active" && sales.IsActive == "Active"&& sales.SalesDate.Value.Year == year
+                                group sellsDetails by new { item.ItemId, item.ItemName } into g
+                                select new ReportTable
                                  {
                                      MonthName = month.ToString(),
-                                     ItemId = g.Key.ItemId,
-                                     ItemName = g.Key.ItemName,
-                                     snitprice = g.Sum(pd => pd.UnitPrice),
-                                     SalesAmount = (int)g.Sum(pd => pd.UnitPrice),
-
-                                 }).ToListAsync();
-            result2.ForEach(x =>
-            {
-                if ((x.snitprice - x.unitprice) == 1) {
-                    x.plStatus = "Profit";
-                }
-                else
-                {
-                    x.plStatus = "Loss";
-
-                }
-               
-            });
-            var combinedResult = result.Concat(result2).ToList();
-            return combinedResult;  
+                                    ItemId = g.Key.ItemId,
+                                    ItemName = g.Key.ItemName,
+                                    Year =year.ToString(),
+                                    SellTotal = g.Sum(a => a.ItemQuantity * a.UnitPrice),
 
 
+                                });
 
+            //var combinedResult = resPurchase.Concat(selled).ToList();
+            //var data = (from p in resPurchase
+            //            join s in selled on p.ItemId equals s.ItemId into gj
+            //            from s in gj.DefaultIfEmpty()
+            //            select new ReportTable
+            //            {
+            //                ItemId = p.ItemId,
+            //                ItemName = p.ItemName,
+            //                plStatus = (p != null && s != null) ? ((p.PurchaseTotal - s.SellTotal) >= 0 ? "Profit" : "Loss") : (p != null ? "No Purchase" : (s != null ? "No sell" : "No transaction Occur")),
 
+            //                Year = year.ToString(),
+            //                MonthName = month.ToString(),
+            //                PurchaseTotal = p.PurchaseTotal,
+            //                SellTotal = s != null ? s.SellTotal : 0
+            //}).ToList();
+
+            var data1 = await (from i in _context.TblItem
+                               join s in selled on i.ItemId equals s.ItemId into sr
+                               from s in sr.DefaultIfEmpty()
+                               join p in resPurchase on i.ItemId equals p.ItemId into pr
+                               from p in pr.DefaultIfEmpty()
+
+                               select new ReportTable
+                               {
+                                   ItemId = i.ItemId,
+                                   ItemName = i.ItemName,
+                                   plStatus = (p != null && s != null) ? ((p.PurchaseTotal - s.SellTotal) >= 0 ? "Profit" : "Loss") : (p.PurchaseTotal != null ? "No Purchase" : (s.SellTotal != null ? "No sell" : "No transaction Occur")),
+
+                                   Year = year.ToString(),
+                                   MonthName = month.ToString(),
+                                   PurchaseTotal = p.PurchaseTotal,
+                                   SellTotal = s.SellTotal
+                                }).ToListAsync(); 
+                                return data1;  
 
         }
 

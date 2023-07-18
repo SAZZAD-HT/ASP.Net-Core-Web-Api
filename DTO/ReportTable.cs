@@ -6,16 +6,19 @@ namespace TaskList.DTO
     {
         public int ItemId { get; set; }
         public string ItemName { get; set; }
-        public int? unitprice{ get; set; }
+      
         /// <summary>s
         /// 
         /// </summary>
+    
+        public int? PurchaseTotal { get; set; }
         public string  MonthName { get; set; }
-        public int? snitprice { get; set; }
-        public DateTime Year { get; set; }
-        public int TotalPurchaseAmount { get; set; }
-        public int SalesAmount { get; set; }
+        
+        public string Year { get; set; }
+        
+       
         public string plStatus { get; set; }
-
+        
+        public int? SellTotal { get; set; }
     }
 }

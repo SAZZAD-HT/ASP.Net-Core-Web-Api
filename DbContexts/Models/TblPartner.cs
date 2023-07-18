@@ -9,7 +9,7 @@ namespace TaskList.DbContexts.Models
 {
     public partial class TblPartner
     {
-        public int IntPartnerId { get; set; }
+        public int PartnerId { get; set; }
         public string PartnerName { get; set; }
         public int? PartnerTypeId { get; set; }
         public string IsActive { get; set; }

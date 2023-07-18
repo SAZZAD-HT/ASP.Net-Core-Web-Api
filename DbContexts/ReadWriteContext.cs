@@ -51,20 +51,17 @@ namespace TaskList.DbContexts
                     .IsUnicode(false);
 
                 entity.Property(e => e.ItemName)
-                    .HasMaxLength(500)
+                    .HasMaxLength(50)
                     .IsUnicode(false);
             });
 
             modelBuilder.Entity<TblPartner>(entity =>
             {
-                entity.HasKey(e => e.IntPartnerId);
+                entity.HasKey(e => e.PartnerId);
 
                 entity.ToTable("tblPartner");
 
-                entity.Property(e => e.IntPartnerId).HasColumnName("intPartnerId");
-
                 entity.Property(e => e.IsActive)
-                    .HasColumnName("isActive")
                     .HasMaxLength(50)
                     .IsUnicode(false);
 
@@ -81,8 +78,8 @@ namespace TaskList.DbContexts
 
                 entity.Property(e => e.IsActive)
                     .HasColumnName("isActive")
-                    .HasMaxLength(100)
-                    .IsFixedLength();
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
 
                 entity.Property(e => e.PartnerTypeName)
                     .HasMaxLength(50)
@@ -105,8 +102,7 @@ namespace TaskList.DbContexts
 
             modelBuilder.Entity<TblPurchaseDetails>(entity =>
             {
-                entity.HasKey(e => e.DetailsId)
-                    .HasName("PK_isActive");
+                entity.HasKey(e => e.DetailsId);
 
                 entity.ToTable("tblPurchaseDetails");
 

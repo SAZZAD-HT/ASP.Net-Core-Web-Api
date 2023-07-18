@@ -7,7 +7,6 @@
         public int? PurchaseQuantity { get; set; }
         public int? PUnitPrice { get; set; }
 
-     
         public int? SurchaseQuantity { get; set; }
         public int? SUnitPrice { get; set; }
 
